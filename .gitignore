@@ -1,0 +1,27 @@
+# macOS & Xcode .gitignore
+.DS_Store
+*/.DS_Store
+
+# Xcode user state
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcuserdatad
+*.xcuserstate
+
+# Build results
+build/
+DerivedData/
+*.moved-aside
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Swift Package Manager
+.build/
+Packages/
