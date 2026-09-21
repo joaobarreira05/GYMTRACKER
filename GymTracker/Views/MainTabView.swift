@@ -30,14 +30,5 @@ public struct MainTabView: View {
                 }
                 .tag(3)
         }
-        .sheet(isPresented: $gymStore.isWorkoutCompleteSheetPresented) {
-            if let completed = gymStore.completedWorkoutSummary {
-                WorkoutCompleteSheet(workout: completed, unit: gymStore.settings.weightUnit) {
-                    gymStore.isWorkoutCompleteSheetPresented = false
-                    gymStore.completedWorkoutSummary = nil
-                    gymStore.selectedTab = 2 // Switch to History tab so user sees their saved workout
-                }
-            }
-        }
     }
 }

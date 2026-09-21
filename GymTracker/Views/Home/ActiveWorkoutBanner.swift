@@ -37,7 +37,7 @@ public struct ActiveWorkoutBanner: View {
                         .font(.system(.title3, design: .rounded, weight: .bold))
                         .foregroundStyle(.primary)
                     
-                    Text("\(workout.exercises.count) exercises • Started \(workout.startTime, style: .relative) ago")
+                    Text("\(workout.exercises.count) exercises • Started \(workout.startTime ?? workout.date, style: .relative) ago")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

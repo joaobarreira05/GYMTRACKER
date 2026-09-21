@@ -55,7 +55,7 @@ public struct TemplatesListView: View {
                         Spacer()
                         
                         Button {
-                            gymStore.startNewWorkout(template: template)
+                            gymStore.loadTemplateIntoToday(template)
                             dismiss()
                         } label: {
                             HStack(spacing: 4) {
