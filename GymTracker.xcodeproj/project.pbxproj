@@ -30,6 +30,7 @@
 		9D3AABC7F861782BE5703553 /* TemplatesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E585D904161AC78AB2E9FC /* TemplatesListView.swift */; };
 		9F08F5127A6E6BB6CA9F9917 /* ExerciseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC2125535EDA938BB925D67E /* ExerciseDetailView.swift */; };
 		A7532945A087DAC84C166D5B /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AED7D14534F5D4BF997D7C72 /* DataManager.swift */; };
+		B298D2711A6C2A19CCCFBA49 /* CertificateExpirationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67FA2DBA8F7D9E85FF488E4 /* CertificateExpirationManager.swift */; };
 		B6EF7E494859DAF143B558C3 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7D99C0382A2B1C01C013A2A /* ShareSheet.swift */; };
 		C1F67F74F01F677F4D600E53 /* AddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E8D5C5E05D7465C24FCB6E /* AddExerciseSheet.swift */; };
 		C7FA7CF3DE5D0272761CBF18 /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7A31599A5020F6EF2372E7 /* Exercise.swift */; };
@@ -82,6 +83,7 @@
 		E3E8D5C5E05D7465C24FCB6E /* AddExerciseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddExerciseSheet.swift; sourceTree = "<group>"; };
 		F0E585D904161AC78AB2E9FC /* TemplatesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplatesListView.swift; sourceTree = "<group>"; };
 		F4579BFBEB161DB23A5F3B5C /* SeedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeedData.swift; sourceTree = "<group>"; };
+		F67FA2DBA8F7D9E85FF488E4 /* CertificateExpirationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CertificateExpirationManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -97,6 +99,7 @@
 		29E4DC93B31A12513B68362D /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				F67FA2DBA8F7D9E85FF488E4 /* CertificateExpirationManager.swift */,
 				CE27568A2CCADB1412CF279A /* WorkoutCalculations.swift */,
 			);
 			path = Utilities;
@@ -321,6 +324,7 @@
 				594019C81AFF2E5C54B564BE /* ActiveWorkoutBanner.swift in Sources */,
 				86E36177EAA4747B90B11AFD /* ActiveWorkoutView.swift in Sources */,
 				C1F67F74F01F677F4D600E53 /* AddExerciseSheet.swift in Sources */,
+				B298D2711A6C2A19CCCFBA49 /* CertificateExpirationManager.swift in Sources */,
 				EB76A690410F7187552DA521 /* CreateTemplateSheet.swift in Sources */,
 				A7532945A087DAC84C166D5B /* DataManager.swift in Sources */,
 				00A416875FC34B442EC6260C /* EditWorkoutView.swift in Sources */,

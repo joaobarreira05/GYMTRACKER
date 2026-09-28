@@ -9,6 +9,10 @@ struct GymTrackerApp: App {
             MainTabView()
                 .environmentObject(gymStore)
                 .preferredColorScheme(gymStore.settings.appearance.colorScheme)
+                .onAppear {
+                    CertificateExpirationManager.shared.refreshCertificateInfo()
+                    CertificateExpirationManager.shared.scheduleExpirationNotification()
+                }
         }
     }
 }

@@ -124,6 +124,27 @@ public struct WorkoutDetailView: View {
                                                 .foregroundStyle(ex.muscleGroup.themeColor)
                                         }
                                         Spacer()
+                                        
+                                        NavigationLink {
+                                            if let exercise = gymStore.exercises.first(where: { $0.id == ex.exerciseId }) ??
+                                                              gymStore.exercises.first(where: { $0.name.lowercased() == ex.exerciseName.lowercased() }) {
+                                                ExerciseDetailView(exercise: exercise)
+                                            } else {
+                                                ExerciseDetailView(exercise: Exercise(name: ex.exerciseName, muscleGroup: ex.muscleGroup, isCustom: true))
+                                            }
+                                        } label: {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "chart.line.uptrend.xyaxis")
+                                                Text("Gráfico")
+                                            }
+                                            .font(.caption.bold())
+                                            .foregroundStyle(Color.accentColor)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(Color.accentColor.opacity(0.12))
+                                            .clipShape(Capsule())
+                                        }
+                                        
                                         Text("\(ex.completedSetsCount) sets")
                                             .font(.caption.bold())
                                             .foregroundStyle(.secondary)

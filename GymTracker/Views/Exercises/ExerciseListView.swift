@@ -68,37 +68,73 @@ public struct ExerciseListView: View {
                 
                 // Exercise List
                 List {
-                    ForEach(filteredExercises) { exercise in
-                        NavigationLink {
-                            ExerciseDetailView(exercise: exercise)
-                        } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: exercise.muscleGroup.iconName)
+                    if filteredExercises.isEmpty {
+                        VStack(spacing: 14) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 40))
+                                .foregroundStyle(.secondary)
+                            
+                            if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+                                Text("Nenhum exercício encontrado")
                                     .font(.headline)
-                                    .foregroundStyle(exercise.muscleGroup.themeColor)
-                                    .frame(width: 32, height: 32)
-                                    .background(exercise.muscleGroup.themeColor.opacity(0.12))
-                                    .clipShape(Circle())
+                                Text("Não foi encontrado nenhum exercício com \"\(searchText.trimmingCharacters(in: .whitespaces))\".")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
                                 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(exercise.name)
-                                        .font(.system(.body, design: .rounded, weight: .medium))
-                                        .foregroundStyle(.primary)
+                                Button {
+                                    isShowingAddExerciseSheet = true
+                                } label: {
+                                    Label("Criar \"\(searchText.trimmingCharacters(in: .whitespaces))\"", systemImage: "plus.circle.fill")
+                                        .font(.subheadline.bold())
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .padding(.top, 4)
+                            } else {
+                                Text("Nenhum exercício")
+                                    .font(.headline)
+                                Text("Não existem exercícios para o filtro selecionado.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                        .listRowBackground(Color.clear)
+                    } else {
+                        ForEach(filteredExercises) { exercise in
+                            NavigationLink {
+                                ExerciseDetailView(exercise: exercise)
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: exercise.muscleGroup.iconName)
+                                        .font(.headline)
+                                        .foregroundStyle(exercise.muscleGroup.themeColor)
+                                        .frame(width: 32, height: 32)
+                                        .background(exercise.muscleGroup.themeColor.opacity(0.12))
+                                        .clipShape(Circle())
                                     
-                                    HStack(spacing: 6) {
-                                        Text(exercise.muscleGroup.rawValue)
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(exercise.name)
+                                            .font(.system(.body, design: .rounded, weight: .medium))
+                                            .foregroundStyle(.primary)
                                         
-                                        if exercise.isCustom {
-                                            Text("Custom")
-                                                .font(.caption2.bold())
-                                                .foregroundStyle(.orange)
+                                        HStack(spacing: 6) {
+                                            Text(exercise.muscleGroup.rawValue)
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                            
+                                            if exercise.isCustom {
+                                                Text("Custom")
+                                                    .font(.caption2.bold())
+                                                    .foregroundStyle(.orange)
+                                            }
                                         }
                                     }
                                 }
+                                .padding(.vertical, 4)
                             }
-                            .padding(.vertical, 4)
                         }
                     }
                 }
@@ -116,7 +152,10 @@ public struct ExerciseListView: View {
                 }
             }
             .sheet(isPresented: $isShowingAddExerciseSheet) {
-                AddExerciseSheet()
+                AddExerciseSheet(
+                    initialName: searchText.trimmingCharacters(in: .whitespaces),
+                    initialMuscleGroup: selectedMuscleGroup
+                )
             }
         }
     }

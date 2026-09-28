@@ -4,10 +4,21 @@ public struct AddExerciseSheet: View {
     @ObservedObject var gymStore = GymStore.shared
     @Environment(\.dismiss) private var dismiss
     
-    @State private var name: String = ""
-    @State private var selectedMuscleGroup: MuscleGroup = .chest
+    @State private var name: String
+    @State private var selectedMuscleGroup: MuscleGroup
+    @FocusState private var isNameFocused: Bool
     
     var onCreated: ((Exercise) -> Void)? = nil
+    
+    public init(
+        initialName: String = "",
+        initialMuscleGroup: MuscleGroup? = nil,
+        onCreated: ((Exercise) -> Void)? = nil
+    ) {
+        self._name = State(initialValue: initialName)
+        self._selectedMuscleGroup = State(initialValue: initialMuscleGroup ?? .chest)
+        self.onCreated = onCreated
+    }
     
     public var body: some View {
         NavigationStack {
@@ -15,6 +26,8 @@ public struct AddExerciseSheet: View {
                 Section("Exercise Details") {
                     TextField("Exercise Name (e.g. Incline Smith Press)", text: $name)
                         .autocorrectionDisabled()
+                        .textInputAutocapitalization(.words)
+                        .focused($isNameFocused)
                     
                     Picker("Muscle Group", selection: $selectedMuscleGroup) {
                         ForEach(MuscleGroup.allCases) { muscle in
@@ -26,6 +39,9 @@ public struct AddExerciseSheet: View {
                         }
                     }
                 }
+            }
+            .onAppear {
+                isNameFocused = true
             }
             .navigationTitle("New Exercise")
             .navigationBarTitleDisplayMode(.inline)

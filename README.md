@@ -19,6 +19,26 @@ Uma aplicação **iOS nativa exclusivamente para iPhone**, construída em **Swif
 - **Sem "Iniciar" ou "Finalizar" Treino**: O que apontas no dia de hoje **é o treino de hoje**. Ponto final.
 - **Auto-Save Atómico em Tempo Real**: Cada peso, repetição ou nota fica imediatamente guardado na sandbox do iPhone. Se fechares a app ou atenderes uma chamada, nada se perde.
 
+### 🔍 Criação Rápida de Exercícios com Nome Pré-Preenchido
+- Ao pesquisar por um exercício na biblioteca ou a meio do treino (ex: `"pall"`):
+  - Se ainda não existir, surge de imediato o botão de atalho **`Criar "pall"`**.
+  - O ecrã de criação abre já com o nome `"pall"` preenchido e foco automático do teclado, permitindo completar o nome em segundos (ex: `"palloff"`).
+
+### 📈 Histórico de Exercícios & Gráficos de Evolução
+- **Diretório Dedicado de Exercícios no Histórico**: Alternador entre **`Treinos`** e **`Exercícios`** na aba de Histórico, com filtros por grupo muscular e lista dos teus recordes pessoais (PR).
+- **Gráficos Multi-Métrica com Swift Charts**:
+  - **Carga Máxima (kg)**
+  - **1RM Estimado** (Fórmula de Epley)
+  - **Volume Total Acumulado (kg)**
+  - **Melhores Repetições**
+- **Resumo de Progressão**: Comparação instantânea entre a primeira e a última sessão (`Início → Atual (+X kg, +Y%)`).
+- **Acesso Ubíquo**: Consulta os gráficos e o histórico de qualquer exercício no catálogo, nos treinos passados ou diretamente no cartão do exercício durante o treino ativo.
+
+### 🔔 Gestor de Certificado Apple (7 Dias) & Alerta de 24 Horas
+- **Deteção Automática de Expiração**: Lê a data de expiração real do perfil de provisionamento (`embedded.mobileprovision`).
+- **Notificação Antecipada Configurável**: Agenda no iOS alertas locais com antecedência de **24 horas**, **4 horas** ou ambos, lembrando-te de ligar o iPhone ao Mac antes de a app expirar.
+- **Definições & Teste Rápido**: Monitor de dias/horas restantes, botão de teste de notificação em 5 segundos e guia passo a passo de renovação.
+
 ### 🔢 Suporte Nativo a Decimais
 - Suporte total para **vírgulas e pontos** (`12,5 kg` ou `12.5 kg`), perfeitamente adaptado ao teclado numérico português e europeu do iOS.
 
@@ -40,10 +60,6 @@ Uma aplicação **iOS nativa exclusivamente para iPhone**, construída em **Swif
 - Pesquisa instantânea por texto (ex: `press` -> Dumbbell Bench Press, Machine Chest Press, etc.).
 - Suporte para criar, editar e apagar **exercícios personalizados**.
 
-### 📈 Gráficos de Evolução & PRs Automáticos
-- Cálculo automático de **Recordes Pessoais (PRs)**: Melhor Peso, Melhores Repetições e Maior Volume.
-- Gráfico de evolução de carga temporal gerado nativamente com **Swift Charts**.
-
 ### 🛡️ Privacidade e Funcionamento 100% Offline
 - **Sem backend, sem APIs externas, sem autenticação, sem cloud, sem telemetria**.
 - Todos os dados pertencem exclusivamente ao dispositivo (`Application Support Directory`).
@@ -59,36 +75,37 @@ Construído seguindo o padrão **MVVM** limpo e modular em Swift moderno:
 ```
 GymTracker/
 ├── App/
-│   ├── GymTrackerApp.swift       # Ponto de entrada @main com suporte de tema
-│   └── Info.plist                # Configurações do Bundle para iPhone
+│   ├── GymTrackerApp.swift                # Ponto de entrada @main com suporte de tema e inicialização de alertas
+│   └── Info.plist                         # Configurações do Bundle para iPhone
 ├── Models/
-│   ├── Exercise.swift            # Modelo de exercício e grupos musculares
-│   ├── MuscleGroup.swift         # Enum com 10 grupos musculares, ícones SF Symbols e cores
-│   ├── Workout.swift             # Modelo diário do treino
-│   ├── WorkoutExercise.swift     # Exercício dentro de um treino com séries e notas
-│   ├── WorkoutSet.swift          # Série com cálculo de volume e formatação
-│   ├── WorkoutTemplate.swift     # Rotinas pré-definidas (Push, Pull, Legs, etc.)
-│   └── UserSettings.swift        # Definições (kg/lb, modo escuro, timer)
+│   ├── Exercise.swift                     # Modelo de exercício e grupos musculares
+│   ├── MuscleGroup.swift                  # Enum com 10 grupos musculares, ícones SF Symbols e cores
+│   ├── Workout.swift                      # Modelo diário do treino
+│   ├── WorkoutExercise.swift              # Exercício dentro de um treino com séries e notas
+│   ├── WorkoutSet.swift                   # Série com cálculo de volume e formatação
+│   ├── WorkoutTemplate.swift              # Rotinas pré-definidas (Push, Pull, Legs, etc.)
+│   └── UserSettings.swift                 # Definições (kg/lb, modo escuro, timer)
 ├── Persistence/
-│   ├── DataManager.swift         # Persistência atómica em JSON com cópias seguras
-│   ├── SeedData.swift            # 60+ exercícios pré-instalados em inglês e 6 templates
-│   └── RestTimerManager.swift    # Gestor do timer de descanso em segundo plano
+│   ├── DataManager.swift                  # Persistência atómica em JSON com cópias seguras
+│   ├── SeedData.swift                     # 60+ exercícios pré-instalados em inglês e 6 templates
+│   └── RestTimerManager.swift             # Gestor do timer de descanso em segundo plano
 ├── ViewModels/
-│   └── GymStore.swift            # ViewModel reativo central com auto-save em tempo real
+│   └── GymStore.swift                     # ViewModel reativo central com auto-save em tempo real
 ├── Utilities/
-│   └── WorkoutCalculations.swift # Cálculo de PRs, pontos de progresso e formatações
+│   ├── WorkoutCalculations.swift          # Cálculo de PRs, 1RM (Epley), pontos de progresso e formatações
+│   └── CertificateExpirationManager.swift # Gestor de expiração de certificado e agendamento de notificações
 ├── Components/
-│   ├── HapticFeedback.swift      # Utilitário de vibrações hápticas do iOS
-│   ├── QuickStatCard.swift       # Cartões de métricas e estatísticas
-│   └── RestTimerOverlay.swift    # Widget flutuante de descanso
+│   ├── HapticFeedback.swift               # Utilitário de vibrações hápticas do iOS
+│   ├── QuickStatCard.swift                # Cartões de métricas e estatísticas
+│   └── RestTimerOverlay.swift             # Widget flutuante de descanso
 └── Views/
-    ├── MainTabView.swift         # Navegação por abas inferiores
-    ├── Home/                     # Ecrã de início com resumo do dia e modelos
-    ├── Workout/                  # Caderno diário de treino (ActiveWorkoutView)
-    ├── History/                  # Histórico por dia, detalhe e edição (WorkoutDetailView)
-    ├── Exercises/                # Catálogo de exercícios, detalhes, PRs e gráficos
-    ├── Templates/                # Gestor de modelos de treino
-    └── Settings/                 # Definições, unidades e exportação de dados
+    ├── MainTabView.swift                  # Navegação por abas inferiores
+    ├── Home/                              # Ecrã de início com resumo do dia e modelos
+    ├── Workout/                           # Caderno diário de treino (ActiveWorkoutView, WorkoutExerciseCard)
+    ├── History/                           # Histórico por treino e evolução por exercício (HistoryView, WorkoutDetailView)
+    ├── Exercises/                         # Catálogo de exercícios, AddExerciseSheet e gráficos (ExerciseDetailView)
+    ├── Templates/                         # Gestor de modelos de treino
+    └── Settings/                          # Definições, validade do certificado, exportação de dados e guia de renovação
 ```
 
 ---
@@ -100,7 +117,7 @@ GymTracker/
 - **Xcode 15+ ou 16+** (gratuito na Mac App Store)
 - iPhone com **iOS 17.0+**
 
-### Passo a Passo:
+### Passo a Passo de Instalação:
 1. Clona este repositório:
    ```bash
    git clone git@github.com:joaobarreira05/GYMTRACKER.git
@@ -114,8 +131,25 @@ GymTracker/
 4. No Xcode:
    - No topo da janela, seleciona o teu **iPhone** na lista de destinos;
    - Vai ao separador **Signing & Capabilities** e seleciona o teu **Personal Team** (Apple ID gratuito);
-5. Carrega no botão **Play ▶️ (Run)**.
+5. Carrega no botão **Play ▶️ (Run)** ou prime **`Cmd + R`**.
 6. A app compila e instala-se diretamente no teu telemóvel!
+
+---
+
+## 🔄 Como Renovar o Certificado (Limite de 7 Dias da Apple)
+
+> [!NOTE]
+> A Apple impõe que aplicações instaladas com uma conta Apple ID gratuita sejam renovadas a cada **7 dias**. A app avisa-te por notificação **24 horas antes** de expirar.
+
+Quando a app expirar ou quando receberes a notificação:
+1. Liga o iPhone ao Mac com o cabo.
+2. Abre o projeto no Xcode (`GymTracker.xcodeproj`).
+3. Confirma que o teu iPhone está selecionado no topo.
+4. Prime **`Cmd + R`** (Run).
+5. O Xcode renova a assinatura por mais 7 dias.
+
+> [!IMPORTANT]
+> **Nunca apagues a app do iPhone para renovar!** Ao compilar pelo Xcode, todos os teus treinos, séries e recordes anteriores continuam 100% salvos.
 
 ---
 

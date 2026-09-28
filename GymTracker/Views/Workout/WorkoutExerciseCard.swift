@@ -5,6 +5,8 @@ public struct WorkoutExerciseCard: View {
     let exerciseIndex: Int
     let onRemove: () -> Void
     
+    @State private var isShowingHistorySheet: Bool = false
+    
     private var exercise: WorkoutExercise? {
         guard gymStore.activeWorkout?.exercises.indices.contains(exerciseIndex) == true else { return nil }
         return gymStore.activeWorkout?.exercises[exerciseIndex]
@@ -32,6 +34,17 @@ public struct WorkoutExerciseCard: View {
                     }
                     
                     Spacer()
+                    
+                    Button {
+                        isShowingHistorySheet = true
+                    } label: {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 32, height: 32)
+                            .background(Color.accentColor.opacity(0.12))
+                            .clipShape(Circle())
+                    }
                     
                     Button(role: .destructive) {
                         onRemove()
@@ -159,6 +172,21 @@ public struct WorkoutExerciseCard: View {
             .padding(16)
             .background(Color(.secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .sheet(isPresented: $isShowingHistorySheet) {
+                NavigationStack {
+                    let matching = gymStore.exercises.first(where: { $0.id == ex.exerciseId }) ??
+                                   gymStore.exercises.first(where: { $0.name.lowercased() == ex.exerciseName.lowercased() }) ??
+                                   Exercise(name: ex.exerciseName, muscleGroup: ex.muscleGroup, isCustom: true)
+                    ExerciseDetailView(exercise: matching)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Fechar") {
+                                    isShowingHistorySheet = false
+                                }
+                            }
+                        }
+                }
+            }
         }
     }
 }

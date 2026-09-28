@@ -79,19 +79,37 @@ public struct ExercisePickerSheet: View {
                                 .foregroundStyle(.secondary)
                             Text("No exercises found")
                                 .font(.headline)
-                            Text("Try searching with different keywords or create a custom exercise.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
                             
-                            Button {
-                                isShowingAddCustomSheet = true
-                            } label: {
-                                Label("Create Custom Exercise", systemImage: "plus.circle.fill")
-                                    .font(.subheadline.bold())
+                            let query = searchText.trimmingCharacters(in: .whitespaces)
+                            if !query.isEmpty {
+                                Text("Não foi encontrado nenhum exercício com \"\(query)\".")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                                
+                                Button {
+                                    isShowingAddCustomSheet = true
+                                } label: {
+                                    Label("Criar \"\(query)\"", systemImage: "plus.circle.fill")
+                                        .font(.subheadline.bold())
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .padding(.top, 4)
+                            } else {
+                                Text("Try searching with different keywords or create a custom exercise.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                                
+                                Button {
+                                    isShowingAddCustomSheet = true
+                                } label: {
+                                    Label("Create Custom Exercise", systemImage: "plus.circle.fill")
+                                        .font(.subheadline.bold())
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .padding(.top, 4)
                             }
-                            .buttonStyle(.borderedProminent)
-                            .padding(.top, 4)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 40)
@@ -161,7 +179,10 @@ public struct ExercisePickerSheet: View {
                 }
             }
             .sheet(isPresented: $isShowingAddCustomSheet) {
-                AddExerciseSheet { newExercise in
+                AddExerciseSheet(
+                    initialName: searchText.trimmingCharacters(in: .whitespaces),
+                    initialMuscleGroup: selectedMuscleGroup
+                ) { newExercise in
                     onSelect(newExercise)
                     dismiss()
                 }
