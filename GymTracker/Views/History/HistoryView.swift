@@ -5,11 +5,18 @@ public enum HistorySection: String, CaseIterable {
     case exercises = "Exercícios"
 }
 
+public enum WorkoutDisplayMode: String, CaseIterable {
+    case list = "Lista"
+    case calendar = "Calendário"
+}
+
 public struct HistoryView: View {
     @ObservedObject var gymStore = GymStore.shared
     @State private var selectedSection: HistorySection = .workouts
+    @State private var workoutDisplayMode: WorkoutDisplayMode = .list
     @State private var searchText: String = ""
     @State private var selectedMuscleGroup: MuscleGroup? = nil
+    @State private var workoutToRename: Workout? = nil
     
     private var daysWithWorkouts: [Workout] {
         gymStore.workouts.filter { !$0.exercises.isEmpty }
@@ -22,7 +29,8 @@ public struct HistoryView: View {
         let query = searchText.lowercased().trimmingCharacters(in: .whitespaces)
         return daysWithWorkouts.filter {
             $0.name.lowercased().contains(query) ||
-            $0.exercises.contains(where: { $0.exerciseName.lowercased().contains(query) })
+            $0.exercises.contains(where: { $0.exerciseName.lowercased().contains(query) }) ||
+            ($0.dominantMuscleGroup?.shortPortugueseName.lowercased().contains(query) ?? false)
         }
     }
     
@@ -52,7 +60,7 @@ public struct HistoryView: View {
     public var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Section Picker: Treinos vs Exercícios
+                // Primary Section Picker: Treinos vs Exercícios
                 Picker("Vista do Histórico", selection: $selectedSection) {
                     ForEach(HistorySection.allCases, id: \.self) { section in
                         Text(section.rawValue).tag(section)
@@ -63,94 +71,69 @@ public struct HistoryView: View {
                 .padding(.vertical, 8)
                 
                 if selectedSection == .workouts {
-                    // MARK: - Workouts View
-                    if daysWithWorkouts.isEmpty {
-                        VStack(spacing: 16) {
-                            Image(systemName: "calendar")
-                                .font(.system(size: 56))
-                                .foregroundStyle(.secondary)
-                            
-                            Text("Sem Histórico de Treinos")
-                                .font(.title2.bold())
-                            
-                            Text("Os treinos que apontares na aba Treino ficam automaticamente arquivados aqui por dia.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 32)
+                    // Secondary View Mode: Lista vs Calendário
+                    Picker("Modo de Visualização", selection: $workoutDisplayMode) {
+                        ForEach(WorkoutDisplayMode.allCases, id: \.self) { mode in
+                            Label(mode.rawValue, systemImage: mode == .list ? "list.bullet" : "calendar")
+                                .tag(mode)
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 6)
+                    
+                    if workoutDisplayMode == .calendar {
+                        // MARK: - Calendar View
+                        WorkoutCalendarView()
                     } else {
-                        List {
-                            ForEach(filteredWorkouts) { workout in
-                                NavigationLink {
-                                    WorkoutDetailView(workout: workout)
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        HStack(alignment: .top) {
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                HStack(spacing: 6) {
-                                                    Text(workout.name)
-                                                        .font(.system(.headline, design: .rounded, weight: .bold))
-                                                        .foregroundStyle(.primary)
-                                                    
-                                                    if Calendar.current.isDateInToday(workout.date) {
-                                                        Text("Hoje")
-                                                            .font(.caption2.bold())
-                                                            .padding(.horizontal, 6)
-                                                            .padding(.vertical, 2)
-                                                            .background(Color.green.opacity(0.15))
-                                                            .foregroundStyle(.green)
-                                                            .clipShape(Capsule())
-                                                    }
-                                                }
-                                                
-                                                Text(workout.date.formatted(date: .abbreviated, time: .omitted))
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                            
-                                            Spacer()
-                                            
-                                            Text("\(workout.exercises.count) ex.")
-                                                .font(.caption.bold())
-                                                .padding(.horizontal, 8)
-                                                .padding(.vertical, 4)
-                                                .background(Color(.tertiarySystemFill))
-                                                .clipShape(Capsule())
-                                                .foregroundStyle(.secondary)
-                                        }
-                                        
-                                        // Exercises list snippet
-                                        Text(workout.exercises.map(\.exerciseName).joined(separator: " • "))
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(1)
-                                        
-                                        HStack {
-                                            Text("\(workout.totalCompletedSets) séries")
-                                                .font(.caption2)
-                                                .foregroundStyle(.tertiary)
-                                            
-                                            Spacer()
-                                            
-                                            Text(WorkoutCalculations.formatVolume(workout.totalVolume, unit: gymStore.settings.weightUnit))
-                                                .font(.caption.bold())
-                                                .foregroundStyle(Color.accentColor)
-                                        }
-                                    }
-                                    .padding(.vertical, 4)
-                                }
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                    Button(role: .destructive) {
-                                        gymStore.deleteWorkoutFromHistory(workout)
+                        // MARK: - Workouts List View
+                        if daysWithWorkouts.isEmpty {
+                            VStack(spacing: 16) {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 56))
+                                    .foregroundStyle(.secondary)
+                                
+                                Text("Sem Histórico de Treinos")
+                                    .font(.title2.bold())
+                                
+                                Text("Os treinos que apontares na aba Treino ficam automaticamente arquivados aqui por dia.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 32)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            List {
+                                ForEach(filteredWorkouts) { workout in
+                                    NavigationLink {
+                                        WorkoutDetailView(workout: workout)
                                     } label: {
-                                        Label("Apagar", systemImage: "trash")
+                                        WorkoutHistoryCard(
+                                            workout: workout,
+                                            onRenameTapped: {
+                                                workoutToRename = workout
+                                            }
+                                        )
+                                    }
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                        Button(role: .destructive) {
+                                            gymStore.deleteWorkoutFromHistory(workout)
+                                        } label: {
+                                            Label("Apagar", systemImage: "trash")
+                                        }
+                                        
+                                        Button {
+                                            workoutToRename = workout
+                                        } label: {
+                                            Label("Renomear", systemImage: "pencil")
+                                        }
+                                        .tint(.orange)
                                     }
                                 }
                             }
+                            .listStyle(.insetGrouped)
                         }
-                        .listStyle(.insetGrouped)
                     }
                 } else {
                     // MARK: - Exercises Evolution Directory
@@ -182,7 +165,7 @@ public struct HistoryView: View {
                                     } label: {
                                         HStack(spacing: 4) {
                                             Image(systemName: muscle.iconName)
-                                            Text(muscle.shortName)
+                                            Text(muscle.shortPortugueseName)
                                         }
                                         .font(.subheadline.bold())
                                         .padding(.horizontal, 12)
@@ -268,6 +251,11 @@ public struct HistoryView: View {
             }
             .navigationTitle("Histórico")
             .searchable(text: $searchText, prompt: selectedSection == .workouts ? "Pesquisar treinos ou exercícios..." : "Pesquisar evolução de exercícios...")
+            .sheet(item: $workoutToRename) { workout in
+                RenameWorkoutSheet(workout: workout) { newName in
+                    gymStore.renameWorkout(id: workout.id, newName: newName)
+                }
+            }
         }
     }
 }

@@ -30,6 +30,21 @@ public enum MuscleGroup: String, Codable, CaseIterable, Identifiable, Sendable {
         }
     }
     
+    public var shortPortugueseName: String {
+        switch self {
+        case .chest: return "Peito"
+        case .shoulders: return "Ombros"
+        case .back: return "Costas"
+        case .biceps: return "Bíceps"
+        case .triceps: return "Tríceps"
+        case .quads: return "Pernas"
+        case .hamstringsGlutes: return "Posterior"
+        case .calves: return "Gémeos"
+        case .absCore: return "Abdominais"
+        case .other: return "Geral"
+        }
+    }
+    
     public var iconName: String {
         switch self {
         case .chest: return "shield.fill"

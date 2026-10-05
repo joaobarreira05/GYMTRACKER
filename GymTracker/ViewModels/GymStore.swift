@@ -319,6 +319,26 @@ public final class GymStore: ObservableObject {
         }
     }
     
+    public func renameWorkout(id: UUID, newName: String) {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        if let idx = workouts.firstIndex(where: { $0.id == id }) {
+            workouts[idx].name = trimmed
+            dataManager.saveWorkouts(workouts)
+            if activeWorkout?.id == id {
+                activeWorkout?.name = trimmed
+            }
+            HapticFeedback.success()
+        }
+    }
+    
+    public func updateActiveWorkoutName(_ name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        activeWorkout?.name = trimmed
+        persistToday()
+    }
+    
     public func deleteWorkoutFromHistory(_ workout: Workout) {
         workouts.removeAll { $0.id == workout.id }
         dataManager.saveWorkouts(workouts)

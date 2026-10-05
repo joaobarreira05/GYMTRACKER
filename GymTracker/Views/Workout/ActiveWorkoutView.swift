@@ -4,8 +4,7 @@ public struct ActiveWorkoutView: View {
     @ObservedObject var gymStore = GymStore.shared
     @State private var isShowingExercisePicker: Bool = false
     @State private var isShowingClearAlert: Bool = false
-    @State private var isShowingEditNameAlert: Bool = false
-    @State private var editedWorkoutName: String = ""
+    @State private var isShowingRenameSheet: Bool = false
     
     private var workout: Workout {
         gymStore.activeWorkout ?? Workout(name: "Treino de Hoje", date: Date(), exercises: [])
@@ -16,34 +15,74 @@ public struct ActiveWorkoutView: View {
             ZStack(alignment: .bottom) {
                 ScrollView {
                     VStack(spacing: 16) {
-                        // Header Card (Name, Date, Notes)
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
+                        // Header Card (Name, Date, Notes, Quick Presets)
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(alignment: .center) {
                                 Button {
-                                    editedWorkoutName = workout.name
-                                    isShowingEditNameAlert = true
+                                    isShowingRenameSheet = true
+                                    HapticFeedback.selection()
                                 } label: {
-                                    HStack(spacing: 6) {
+                                    HStack(spacing: 8) {
                                         Text(workout.name)
                                             .font(.system(.title2, design: .rounded, weight: .bold))
                                             .foregroundStyle(.primary)
                                         
-                                        Image(systemName: "pencil.circle.fill")
-                                            .font(.subheadline)
+                                        Image(systemName: "pencil")
+                                            .font(.caption.bold())
                                             .foregroundStyle(.secondary)
+                                            .padding(6)
+                                            .background(Color(.tertiarySystemFill))
+                                            .clipShape(Circle())
                                     }
                                 }
+                                .buttonStyle(.plain)
                                 
                                 Spacer()
                                 
-                                // Date Badge
-                                Text(workout.date.formatted(date: .abbreviated, time: .omitted))
-                                    .font(.caption.bold())
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 5)
-                                    .background(Color(.tertiarySystemFill))
+                                if let dominant = workout.dominantMuscleGroup {
+                                    HStack(spacing: 4) {
+                                        Circle()
+                                            .fill(dominant.themeColor)
+                                            .frame(width: 8, height: 8)
+                                        Text(dominant.shortPortugueseName)
+                                            .font(.caption2.bold())
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(dominant.themeColor.opacity(0.15))
+                                    .foregroundStyle(dominant.themeColor)
                                     .clipShape(Capsule())
-                                    .foregroundStyle(.secondary)
+                                } else {
+                                    // Date Badge
+                                    Text(workout.date.formatted(date: .abbreviated, time: .omitted))
+                                        .font(.caption.bold())
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 5)
+                                        .background(Color(.tertiarySystemFill))
+                                        .clipShape(Capsule())
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            
+                            // Quick Presets Bar
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 6) {
+                                    ForEach(["Push", "Pull", "Legs", "Superior", "Inferior", "Peito", "Costas", "Pernas", "Ombros", "Full Body"], id: \.self) { preset in
+                                        Button {
+                                            gymStore.updateWorkoutName(name: preset)
+                                            HapticFeedback.selection()
+                                        } label: {
+                                            Text(preset)
+                                                .font(.caption2.bold())
+                                                .padding(.horizontal, 9)
+                                                .padding(.vertical, 5)
+                                                .background(workout.name == preset ? Color.accentColor : Color(.tertiarySystemFill))
+                                                .foregroundStyle(workout.name == preset ? .white : .primary)
+                                                .clipShape(Capsule())
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
                             }
                             
                             // General Notes
@@ -151,10 +190,9 @@ public struct ActiveWorkoutView: View {
                         }
                         
                         Button {
-                            editedWorkoutName = workout.name
-                            isShowingEditNameAlert = true
+                            isShowingRenameSheet = true
                         } label: {
-                            Label("Mudar Nome", systemImage: "pencil")
+                            Label("Renomear Treino", systemImage: "pencil")
                         }
                         
                         if !workout.exercises.isEmpty {
@@ -175,6 +213,11 @@ public struct ActiveWorkoutView: View {
                     gymStore.addExerciseToActiveWorkout(selectedExercise)
                 }
             }
+            .sheet(isPresented: $isShowingRenameSheet) {
+                RenameWorkoutSheet(workout: workout) { newName in
+                    gymStore.updateWorkoutName(name: newName)
+                }
+            }
             .alert("Limpar Treino de Hoje?", isPresented: $isShowingClearAlert) {
                 Button("Limpar", role: .destructive) {
                     gymStore.clearTodayWorkout()
@@ -182,13 +225,6 @@ public struct ActiveWorkoutView: View {
                 Button("Cancelar", role: .cancel) {}
             } message: {
                 Text("Isto vai esvaziar a folha de treino de hoje.")
-            }
-            .alert("Mudar Nome do Treino", isPresented: $isShowingEditNameAlert) {
-                TextField("Nome do Treino", text: $editedWorkoutName)
-                Button("Guardar") {
-                    gymStore.updateWorkoutName(name: editedWorkoutName)
-                }
-                Button("Cancelar", role: .cancel) {}
             }
         }
     }

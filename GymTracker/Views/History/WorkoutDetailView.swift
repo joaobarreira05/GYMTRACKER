@@ -7,6 +7,7 @@ public struct WorkoutDetailView: View {
     
     @State private var isShowingDeleteAlert: Bool = false
     @State private var isShowingEditSheet: Bool = false
+    @State private var isShowingRenameSheet: Bool = false
     
     public init(workout: Workout) {
         self.workoutId = workout.id
@@ -23,10 +24,24 @@ public struct WorkoutDetailView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         // Top Summary Card
                         VStack(alignment: .leading, spacing: 12) {
-                            HStack {
+                            HStack(alignment: .top) {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(workout.name)
-                                        .font(.system(.title2, design: .rounded, weight: .bold))
+                                    HStack(spacing: 8) {
+                                        Text(workout.name)
+                                            .font(.system(.title2, design: .rounded, weight: .bold))
+                                        
+                                        Button {
+                                            isShowingRenameSheet = true
+                                        } label: {
+                                            Image(systemName: "pencil")
+                                                .font(.caption.bold())
+                                                .foregroundStyle(.secondary)
+                                                .padding(6)
+                                                .background(Color(.tertiarySystemFill))
+                                                .clipShape(Circle())
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
                                     
                                     Text(workout.date.formatted(date: .long, time: .shortened))
                                         .font(.subheadline)
@@ -34,6 +49,43 @@ public struct WorkoutDetailView: View {
                                 }
                                 
                                 Spacer()
+                                
+                                if let dominant = workout.dominantMuscleGroup {
+                                    HStack(spacing: 5) {
+                                        Circle()
+                                            .fill(dominant.themeColor)
+                                            .frame(width: 8, height: 8)
+                                        Text(dominant.shortPortugueseName)
+                                            .font(.caption.bold())
+                                            .foregroundStyle(dominant.themeColor)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(dominant.themeColor.opacity(0.15))
+                                    .clipShape(Capsule())
+                                }
+                            }
+                            
+                            // Muscle Breakdown Pills
+                            if !workout.muscleBreakdown.isEmpty {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 6) {
+                                        ForEach(workout.muscleBreakdown) { item in
+                                            HStack(spacing: 4) {
+                                                Circle()
+                                                    .fill(item.muscle.themeColor)
+                                                    .frame(width: 6, height: 6)
+                                                Text("\(item.muscle.shortPortugueseName) (\(item.setCount))")
+                                                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                                                    .foregroundStyle(.primary)
+                                            }
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(Color(.tertiarySystemFill))
+                                            .clipShape(Capsule())
+                                        }
+                                    }
+                                }
                             }
                             
                             if let notes = workout.notes, !notes.isEmpty {
@@ -201,12 +253,24 @@ public struct WorkoutDetailView: View {
                         }
                         .padding(.horizontal, 16)
                         
-                        // Action Buttons: Edit & Delete
+                        // Action Buttons: Rename, Edit & Delete
                         HStack(spacing: 12) {
+                            Button {
+                                isShowingRenameSheet = true
+                            } label: {
+                                Label("Renomear", systemImage: "pencil")
+                                    .font(.subheadline.bold())
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(Color(.secondarySystemGroupedBackground))
+                                    .foregroundStyle(Color.accentColor)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
+                            
                             Button {
                                 isShowingEditSheet = true
                             } label: {
-                                Label("Edit Workout", systemImage: "pencil")
+                                Label("Editar Séries", systemImage: "slider.horizontal.3")
                                     .font(.subheadline.bold())
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 14)
@@ -218,9 +282,9 @@ public struct WorkoutDetailView: View {
                             Button(role: .destructive) {
                                 isShowingDeleteAlert = true
                             } label: {
-                                Label("Delete", systemImage: "trash")
+                                Image(systemName: "trash")
                                     .font(.subheadline.bold())
-                                    .frame(maxWidth: .infinity)
+                                    .padding(.horizontal, 16)
                                     .padding(.vertical, 14)
                                     .background(Color(.secondarySystemGroupedBackground))
                                     .foregroundStyle(.red)
@@ -238,15 +302,20 @@ public struct WorkoutDetailView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
-                            isShowingEditSheet = true
+                            isShowingRenameSheet = true
                         } label: {
-                            Text("Edit")
-                                .font(.headline)
+                            Text("Renomear")
+                                .font(.subheadline.bold())
                         }
                     }
                 }
                 .sheet(isPresented: $isShowingEditSheet) {
                     EditWorkoutView(workout: workout)
+                }
+                .sheet(isPresented: $isShowingRenameSheet) {
+                    RenameWorkoutSheet(workout: workout) { newName in
+                        gymStore.renameWorkout(id: workout.id, newName: newName)
+                    }
                 }
                 .alert("Delete Workout?", isPresented: $isShowingDeleteAlert) {
                     Button("Delete", role: .destructive) {
