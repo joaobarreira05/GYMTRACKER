@@ -12,7 +12,7 @@ public enum NotificationTimingPreference: String, CaseIterable, Identifiable, Co
 }
 
 @MainActor
-public final class CertificateExpirationManager: ObservableObject {
+public final class CertificateExpirationManager: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
     public static let shared = CertificateExpirationManager()
     
     public static let notification24hId = "gymtracker_cert_expiration_24h"
@@ -20,7 +20,6 @@ public final class CertificateExpirationManager: ObservableObject {
     public static let testNotificationId = "gymtracker_cert_test_notification"
     
     private let fallbackDays: Double = 7.0
-    private let userDefaultsKeyBuildDate = "GymTracker_AppBuildOrInstallDate"
     private let userDefaultsKeyNotificationEnabled = "GymTracker_CertNotificationEnabled"
     private let userDefaultsKeyTimingPreference = "GymTracker_CertTimingPreference"
     
@@ -40,14 +39,14 @@ public final class CertificateExpirationManager: ObservableObject {
         didSet {
             UserDefaults.standard.set(isNotificationEnabled, forKey: userDefaultsKeyNotificationEnabled)
             if isNotificationEnabled {
-                scheduleExpirationNotification()
+                requestPermissionAndSchedule()
             } else {
                 cancelScheduledNotification()
             }
         }
     }
     
-    private init() {
+    private override init() {
         let savedEnabled = UserDefaults.standard.object(forKey: userDefaultsKeyNotificationEnabled) as? Bool ?? true
         self.isNotificationEnabled = savedEnabled
         
@@ -55,9 +54,11 @@ public final class CertificateExpirationManager: ObservableObject {
            let pref = NotificationTimingPreference(rawValue: savedPref) {
             self.timingPreference = pref
         } else {
-            self.timingPreference = .twentyFourHours
+            self.timingPreference = .both
         }
         
+        super.init()
+        UNUserNotificationCenter.current().delegate = self
         refreshCertificateInfo()
     }
     
@@ -67,7 +68,6 @@ public final class CertificateExpirationManager: ObservableObject {
             self.expirationDate = realExpiration
             self.isUsingFallback = false
         } else {
-            // Fallback: build date or first launch date + 7 days
             let baseDate = determineBaseDate()
             self.expirationDate = baseDate.addingTimeInterval(fallbackDays * 24 * 3600)
             self.isUsingFallback = true
@@ -106,19 +106,16 @@ public final class CertificateExpirationManager: ObservableObject {
     }
     
     private func determineBaseDate() -> Date {
-        // Try executable creation date
         if let exeURL = Bundle.main.executableURL,
            let attrs = try? FileManager.default.attributesOfItem(atPath: exeURL.path),
-           let creationDate = attrs[.creationDate] as? Date {
-            return creationDate
+           let modDate = attrs[.modificationDate] as? Date {
+            return modDate
         }
-        // Try saved install date or set now
-        if let saved = UserDefaults.standard.object(forKey: userDefaultsKeyBuildDate) as? Date {
-            return saved
+        if let bundleAttrs = try? FileManager.default.attributesOfItem(atPath: Bundle.main.bundlePath),
+           let bundleModDate = bundleAttrs[.modificationDate] as? Date {
+            return bundleModDate
         }
-        let now = Date()
-        UserDefaults.standard.set(now, forKey: userDefaultsKeyBuildDate)
-        return now
+        return Date()
     }
     
     // MARK: - Computed Properties
@@ -204,60 +201,76 @@ public final class CertificateExpirationManager: ObservableObject {
     public func scheduleExpirationNotification() {
         guard isNotificationEnabled else { return }
         
-        // Remove previous notifications
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [
-            Self.notification24hId,
-            Self.notification4hId
-        ])
-        
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "pt_PT")
-        formatter.dateFormat = "HH:mm 'de' d 'de' MMMM"
-        let expString = formatter.string(from: expirationDate)
-        
-        var scheduledAny = false
-        
-        // Schedule 24h notification
-        if timingPreference == .twentyFourHours || timingPreference == .both {
-            let target24h = notificationTargetDate24h
-            let interval24h = target24h.timeIntervalSince(Date())
-            
-            if interval24h > 0 {
-                let content = UNMutableNotificationContent()
-                content.title = "⚠️ Certificado do GymTracker Expira em 24 Horas"
-                content.subtitle = "Expira amanhã às \(expString)"
-                content.body = "Conecta o teu iPhone ao Mac e clica em Run no Xcode (Cmd+R) para renovar por mais 7 dias. Os teus treinos continuam salvos!"
-                content.sound = .default
+        UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
+            Task { @MainActor in
+                guard let self = self else { return }
+                self.notificationStatus = settings.authorizationStatus
                 
-                let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval24h, repeats: false)
-                let request = UNNotificationRequest(identifier: Self.notification24hId, content: content, trigger: trigger)
+                // If not determined, request permission from user immediately
+                if settings.authorizationStatus == .notDetermined {
+                    self.requestPermissionAndSchedule()
+                    return
+                }
                 
-                UNUserNotificationCenter.current().add(request) { _ in }
-                scheduledAny = true
+                guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+                    self.isNotificationScheduled = false
+                    return
+                }
+                
+                // Clear old notifications
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [
+                    Self.notification24hId,
+                    Self.notification4hId
+                ])
+                
+                let formatter = DateFormatter()
+                formatter.locale = Locale(identifier: "pt_PT")
+                formatter.dateFormat = "HH:mm 'de' d 'de' MMMM"
+                let expString = formatter.string(from: self.expirationDate)
+                
+                var scheduledAny = false
+                
+                // Schedule 24h notification using Calendar Trigger
+                if self.timingPreference == .twentyFourHours || self.timingPreference == .both {
+                    let target24h = self.notificationTargetDate24h
+                    if target24h > Date() {
+                        let content = UNMutableNotificationContent()
+                        content.title = "⚠️ Certificado do GymTracker Expira em 24 Horas"
+                        content.subtitle = "Expira amanhã às \(expString)"
+                        content.body = "Conecta o teu iPhone ao Mac e clica em Run no Xcode (Cmd+R) para renovar por mais 7 dias. Os teus treinos continuam salvos!"
+                        content.sound = .default
+                        
+                        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: target24h)
+                        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+                        let request = UNNotificationRequest(identifier: Self.notification24hId, content: content, trigger: trigger)
+                        
+                        UNUserNotificationCenter.current().add(request) { _ in }
+                        scheduledAny = true
+                    }
+                }
+                
+                // Schedule 4h notification using Calendar Trigger
+                if self.timingPreference == .fourHours || self.timingPreference == .both {
+                    let target4h = self.notificationTargetDate4h
+                    if target4h > Date() {
+                        let content = UNMutableNotificationContent()
+                        content.title = "🚨 Último Aviso: Certificado a Expirar em 4 Horas!"
+                        content.subtitle = "Expira hoje às \(expString)"
+                        content.body = "O GymTracker vai expirar em breve. Liga o iPhone ao Mac e clica em Run no Xcode (Cmd+R) para renovar antes do próximo treino!"
+                        content.sound = .default
+                        
+                        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: target4h)
+                        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+                        let request = UNNotificationRequest(identifier: Self.notification4hId, content: content, trigger: trigger)
+                        
+                        UNUserNotificationCenter.current().add(request) { _ in }
+                        scheduledAny = true
+                    }
+                }
+                
+                self.isNotificationScheduled = scheduledAny
             }
         }
-        
-        // Schedule 4h notification
-        if timingPreference == .fourHours || timingPreference == .both {
-            let target4h = notificationTargetDate4h
-            let interval4h = target4h.timeIntervalSince(Date())
-            
-            if interval4h > 0 {
-                let content = UNMutableNotificationContent()
-                content.title = "🚨 Último Aviso: Certificado a Expirar em 4 Horas!"
-                content.subtitle = "Expira hoje às \(expString)"
-                content.body = "O GymTracker vai expirar em breve. Liga o iPhone ao Mac e clica em Run no Xcode (Cmd+R) para renovar antes do próximo treino!"
-                content.sound = .default
-                
-                let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval4h, repeats: false)
-                let request = UNNotificationRequest(identifier: Self.notification4hId, content: content, trigger: trigger)
-                
-                UNUserNotificationCenter.current().add(request) { _ in }
-                scheduledAny = true
-            }
-        }
-        
-        self.isNotificationScheduled = scheduledAny
     }
     
     public func cancelScheduledNotification() {
@@ -276,9 +289,9 @@ public final class CertificateExpirationManager: ObservableObject {
             }
             
             let content = UNMutableNotificationContent()
-            content.title = "⚠️ Teste: Certificado a Expirar (Aviso 24 Horas)"
-            content.subtitle = "Notificação de Demonstração"
-            content.body = "Este é um teste do aviso de expiração de 24 horas do GymTracker. Quando faltar 1 dia real, receberás este alerta para ligar o iPhone ao Mac e renovar no Xcode!"
+            content.title = "⚠️ Teste: Certificado a Expirar"
+            content.subtitle = "Notificação de Demonstração (GymTracker)"
+            content.body = "Este é um teste do aviso de expiração do GymTracker. O sistema de notificações está 100% ativo e configurado no teu iPhone!"
             content.sound = .default
             
             // Trigger in 5 seconds
@@ -291,5 +304,20 @@ public final class CertificateExpirationManager: ObservableObject {
                 }
             }
         }
+    }
+    
+    public func openSystemSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString), UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+        }
+    }
+    
+    // MARK: - UNUserNotificationCenterDelegate
+    nonisolated public func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound, .badge])
     }
 }

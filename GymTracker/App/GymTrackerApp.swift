@@ -11,7 +11,7 @@ struct GymTrackerApp: App {
                 .preferredColorScheme(gymStore.settings.appearance.colorScheme)
                 .onAppear {
                     CertificateExpirationManager.shared.refreshCertificateInfo()
-                    CertificateExpirationManager.shared.scheduleExpirationNotification()
+                    CertificateExpirationManager.shared.requestPermissionAndSchedule()
                 }
         }
     }

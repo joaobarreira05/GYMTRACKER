@@ -84,9 +84,29 @@ public struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     } else if certManager.notificationStatus == .denied {
-                        Text("⚠️ Notificações bloqueadas no iOS. Ativa as notificações do GymTracker para receber o alerta de expiração.")
-                            .font(.caption2)
-                            .foregroundStyle(.orange)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("⚠️ Notificações desativadas no iOS.")
+                                .font(.caption2.bold())
+                                .foregroundStyle(.orange)
+                            Button {
+                                certManager.openSystemSettings()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Text("Abrir Definições do iPhone para Ativar")
+                                    Image(systemName: "arrow.up.forward.app")
+                                }
+                                .font(.caption.bold())
+                                .foregroundStyle(Color.accentColor)
+                            }
+                        }
+                    } else if certManager.notificationStatus == .notDetermined {
+                        Button {
+                            certManager.requestPermissionAndSchedule()
+                        } label: {
+                            Label("Ativar Permissão de Notificações", systemImage: "bell.badge.fill")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(Color.accentColor)
+                        }
                     }
                 }
                 

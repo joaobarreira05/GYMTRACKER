@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct HomeView: View {
     @ObservedObject var gymStore = GymStore.shared
+    @ObservedObject var certManager = CertificateExpirationManager.shared
     @Binding var selectedTab: Int
     
     private var greeting: String {
@@ -47,6 +48,56 @@ public struct HomeView: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
+                    
+                    // MARK: - Certificate Warnings (if expiring soon or permissions disabled)
+                    if certManager.isExpiringSoon || certManager.isExpired {
+                        HStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.title2)
+                                .foregroundStyle(certManager.isExpired ? .red : .orange)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(certManager.isExpired ? "Certificado Expirado" : "Certificado a Expirar (\(certManager.remainingFormatted))")
+                                    .font(.system(.subheadline, design: .rounded, weight: .bold))
+                                    .foregroundStyle(certManager.isExpired ? .red : .orange)
+                                Text("Conecta o iPhone ao Mac e prime Cmd+R no Xcode para renovar sem perder dados.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                        .padding(14)
+                        .background(certManager.isExpired ? Color.red.opacity(0.12) : Color.orange.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .padding(.horizontal, 20)
+                    } else if certManager.notificationStatus == .denied {
+                        Button {
+                            certManager.openSystemSettings()
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "bell.slash.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(.orange)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Notificações Desativadas no iPhone")
+                                        .font(.system(.subheadline, design: .rounded, weight: .bold))
+                                        .foregroundStyle(.primary)
+                                    Text("Toca aqui para permitir alertas e seres avisado 24h antes da app expirar.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(12)
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .padding(.horizontal, 20)
+                        }
+                    }
                     
                     // MARK: - Today's Sheet Quick Access
                     VStack(alignment: .leading, spacing: 12) {
