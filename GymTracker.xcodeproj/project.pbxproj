@@ -67,7 +67,7 @@
 		65D8669E6075E8D1D7695F81 /* WorkoutHistoryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutHistoryCard.swift; sourceTree = "<group>"; };
 		6D7A31599A5020F6EF2372E7 /* Exercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
 		6D99255207149CA82A35375E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		6F088548B9C526C109BE717C /* GymTracker.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GymTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6F088548B9C526C109BE717C /* GymTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GymTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		72019A364D81F7EC83762B6A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		72B953FD8BC4D4FBE6D8BE95 /* WorkoutSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSet.swift; sourceTree = "<group>"; };
 		8AB39A29E488C33329F5A379 /* WorkoutCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCalendarView.swift; sourceTree = "<group>"; };
@@ -382,6 +382,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 59KCG2VZV6;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = GymTracker/App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -525,6 +526,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 59KCG2VZV6;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = GymTracker/App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
